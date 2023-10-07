@@ -33,7 +33,7 @@ RUN apt-get install -y \
 RUN apt-get install -y \
         python3 \
 # Interface dependecies \
-        libncurses5 \
+        libncurses5 libncurses-dev \
 #       qt5 \
 #       glib2 gtk2 glade2 \
 # Source fetching tools \
