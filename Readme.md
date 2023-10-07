@@ -1,5 +1,5 @@
 # Docker Buildroot
-A Docker container to work and produce Buildroot images through a bind mounts.
+A Docker container to work and produce Buildroot images through a bind mounts working directory.
 
 # Build images
 
@@ -22,3 +22,4 @@ Launch container
 docker run -it --mount type=bind,source="$(pwd)",destination=/buildroot-dev docker-br
 ```
 
+Then your Buildroot work directory should be bind in `/buildroot-dev`.
