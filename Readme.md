@@ -4,7 +4,7 @@ A Docker container to work and produce Buildroot images through a bind mounts wo
 # Build images
 
 ```shell
-docker run -t docker-br .
+docker build -t docker-br .
 ```
 
 # Usage
