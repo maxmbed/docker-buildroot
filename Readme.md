@@ -12,11 +12,11 @@ docker build -t docker-buildroot .
 
 Start docker-buildroot container using the run script. 
 
-Few input may be parsed to perform dedicated action inside container for example entering the shell or starting buildroot build.
+Few input may be parsed to perform dedicated action inside the container for example entering the shell or for starting buildroot.
 
-The container entry point is an agnostic script that read yaml parameters need for getting Buildroot ready to go. Input configuration such as defconfig, scripts, packages, archives should be placed inside the mount point `./materials` (auto create and mounted by run script).
+The container entry point is an agnostic script which read yaml parameters need for getting Buildroot ready to go. Input configuration such as defconfig, scripts, packages, archives should be placed inside the mount point `./materials` (auto create and mounted by run script).
 
-Upon successfull build, resulting arfterfacts images, rootfs, sdk and other output materials are copied within `./materials`.
+Upon successfull build, resulting arftefacts images, rootfs, sdk and other materials output are copied within `./materials`.
 
 Container uses volume to keep persistent ccache, host and downloads directories.
 
@@ -26,7 +26,7 @@ Below describes few container entry point commands.
 
 ## Enter shell container
 
-Launch container and login to manually interact with buildroot (e.g. enter menuconfig, try build, edit files ...).
+Launch container and login. This is handy to manually interact with buildroot (e.g. enter menuconfig, try build, edit files ...).
 
 ```sh
 ./run-cotnainer.sh -s
@@ -36,7 +36,7 @@ Launch container and login to manually interact with buildroot (e.g. enter menuc
 
 Run the build of a target.
 
-A target is a platform, board or project that is defined within `./materials/target.yaml`. It should contain at a least defconfig files but may contain other optionnal parameters need for Buildroot.
+A target is a platform, board or project that is defined under `./materials/target.yaml`. It should have at least defconfig file but it may contain other optionnal parameters need for Buildroot as well.
 
 Multiple targets can be defined in single `target.yaml`. Each target can be used to define sdk, images and more.
 
