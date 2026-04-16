@@ -1,25 +1,74 @@
 # Docker Buildroot
-A Docker container to work and produce Buildroot images through a bind mounts working directory.
 
-# Build images
+A Docker container to make Linux-base images with Buildroot
+
+# Build docker image
 
 ```shell
-docker build -t docker-br .
+docker build -t docker-buildroot .
 ```
+
+# Introduction 
+
+Start docker-buildroot container using the run script. 
+
+Few input may be parsed to perform dedicated action inside container for example entering the shell or starting buildroot build.
+
+The container entry point is an agnostic script that read yaml parameters need for getting Buildroot ready to go. Input configuration such as defconfig, scripts, packages, archives should be placed inside the mount point `./materials` (auto create and mounted by run script).
+
+Upon successfull build, resulting arfterfacts images, rootfs, sdk and other output materials are copied within `./materials`.
+
+Container uses volume to keep persistent ccache, host and downloads directories.
 
 # Usage
 
-Get Buildroot if not done already
+Below describes few container entry point commands.
 
-```shell
-git clone https://github.com/buildroot/buildroot.git
-cd buildroot
+## Enter shell container
+
+Launch container and login to manually interact with buildroot (e.g. enter menuconfig, try build, edit files ...).
+
+```sh
+./run-cotnainer.sh -s
 ```
 
-Launch container
+## Building target
 
-```shell
-docker run -it --mount type=bind,source="$(pwd)",destination=/buildroot-dev docker-br
+Run the build of a target.
+
+A target is a platform, board or project that is defined within `./materials/target.yaml`. It should contain at a least defconfig files but may contain other optionnal parameters need for Buildroot.
+
+Multiple targets can be defined in single `target.yaml`. Each target can be used to define sdk, images and more.
+
+## Persistent volume
+
+Container creates/uses volume to keep buildroot ccache, host and download directories persistent between run of containers
+
+Volume tree:
+
+```
+cache/
+|-- ccache-image
+|-- ccache-sdk
+|-- dl
+`-- sdk*
 ```
 
-Then your Buildroot work directory should be bind in `/buildroot-dev`.
+> *a copy of sdk is kept in volume to build image 
+
+### Sdk
+
+Build a target sdk
+
+```sh
+./run-container.sh -t <target-name> -b sdk
+```
+
+### Image
+
+Build a target image
+
+```sh
+./run-container.sh -t <target-name> -b image
+
+```

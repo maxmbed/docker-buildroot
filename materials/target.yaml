@@ -1,0 +1,10 @@
+# Target
+
+qemu_x86_64:
+    sdk:
+        defconfig: "materials/configs/sdk/qemu_x86_64_defconfig"
+        toolchain_archive: "x86_64-buildroot-linux-gnu_sdk-buildroot.tar.gz"
+    image:
+        defconfig: "materials/configs/image/qemu_x86_64_defconfig"
+
+    nproc: 4

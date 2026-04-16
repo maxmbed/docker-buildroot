@@ -1,6 +1,6 @@
 # Docker Buildroot
 
-FROM debian:12
+FROM debian:13
 RUN apt-get update -y
 
 # Buildroot mandatory package:
@@ -32,8 +32,8 @@ RUN apt-get install -y \
 # https://buildroot.org/downloads/manual/manual.html#requirement-optional
 RUN apt-get install -y \
         python3 \
-# Interface dependecies \
-        libncurses5 libncurses-dev \
+# User Interface dependecies \
+        libncurses6 libncurses-dev \
 #       qt5 \
 #       glib2 gtk2 glade2 \
 # Source fetching tools \
@@ -47,13 +47,20 @@ RUN apt-get install -y \
         javacc \
         asciidoc \
         w3m \
-        dblatex
+        dblatex \
+# User utility \
+        vim \
+        yq \
+        nnn
 
-
-# /!\ Workaround /!\ 
-# Hack 'tar' to add options since some packages expect ownership (uid,gid) changes (e.g. google protobuf). 
-# https://github.com/aws/aws-lambda-python-runtime-interface-client/issues/37
-RUN mkdir -p /opt/bin && mv /bin/tar /opt/bin/
-COPY tar.sh /bin/tar
-RUN chmod 755 /bin/tar
+WORKDIR /buildroot-home
+# Below volumes are created to keeps Buildroot ccache, download and host directory persistent
+VOLUME /buildroot-home/cache
+VOLUME /buildroot-home/host
+RUN mkdir logs
+# Get Buildroot, jaihouse hypervisor and linux kernel for jailhouse
+RUN git clone --depth 1 -b 2025.02 https://gitlab.com/buildroot.org/buildroot.git
+COPY ./docker-entrypoint.sh ./
+ENTRYPOINT [ "/bin/bash", "./docker-entrypoint.sh" ]
+CMD ["-s"]
 
