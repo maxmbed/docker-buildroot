@@ -219,7 +219,7 @@ case ${opt} in
     exit 0
     ;;
   k)
-    $keep_session=1
+    keep_session=1
     ;;
   ?)
     show_usage
@@ -250,7 +250,7 @@ case ${build_type} in
 esac
 
 if [ $keep_session -eq 1 ]; then
-  echo "Keep session enable"
+  echo "Keeping this session alive"
   shell
 fi
 
