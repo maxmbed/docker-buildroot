@@ -56,7 +56,8 @@ RUN apt-get install -y \
 WORKDIR /buildroot-home
 # Below volumes are created to keeps Buildroot ccache, download and host directory persistent
 VOLUME /buildroot-home/cache
-VOLUME /buildroot-home/host
+VOLUME /buildroot-home/target-builds
+
 RUN mkdir logs
 # Get Buildroot, jaihouse hypervisor and linux kernel for jailhouse
 RUN git clone --depth 1 -b 2025.02 https://gitlab.com/buildroot.org/buildroot.git

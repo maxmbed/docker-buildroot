@@ -1,5 +1,5 @@
 
-#set -x
+set -x
 
 # Root directory
 rootdir=/
@@ -8,16 +8,18 @@ rootdir=/
 workdir=${rootdir}buildroot-home
 
 # Container volumes
-materials_dir=${workdir}/materials
 buildroot_dir=${workdir}/buildroot
 cache_dir=${workdir}/cache
+build_dir=${workdir}/target-builds
+
+# Bind directory
+materials_dir=${workdir}/materials
 
 # Log
 log_dir=${workdir}/logs
 sdk_dir=${cache_dir}/sdk
 
 # In/Out directory
-configs_dir=${workdir}/configs
 image_dir=${materials_dir}/images
 target_yaml=${materials_dir}/target.yaml
 
@@ -44,6 +46,7 @@ buildroot_build_sdk() {
   local target=$1
   local status_file=${log_dir}/buildroot_sdk.status
   local log_file_path=${log_dir}/buildroot_sdk.log
+  local target_build_dir=${build_dir}/${target}
 
   local defconfig=$(yq -r ".$target.sdk.defconfig" ${target_yaml})
   local sdk_archive=$(yq -r ".$target.sdk.toolchain_archive" ${target_yaml})
@@ -64,11 +67,14 @@ buildroot_build_sdk() {
   fi
   log_file "set sdk config success" ${status_file}
 
+  # Set target build directory
+  mkdir -p ${target_build_dir}
+  cd ${target_build_dir}
+
   # Build sdk
   log_file "build running" ${status_file}
-  cd ${buildroot_dir}
 
-  if ! make $(basename ${defconfig}) &>> ${log_file_path}; then
+  if ! make O=${target_build_dir} -C ${buildroot_dir} $(basename ${defconfig}) &>> ${log_file_path}; then
     log_shell "set defconfig failure"
     log_file "set defconfig failure" ${status_file}
     return 1
@@ -83,20 +89,12 @@ buildroot_build_sdk() {
 
   # Cache sdk archive
   mkdir -p ${sdk_dir}
-  cp ${buildroot_dir}/output/images/${sdk_archive} ${sdk_dir}
+  cp ${target_build_dir}/images/${sdk_archive} ${sdk_dir}
   if [ $? -ne 0 ]; then
     log_file "cache sdk failure" ${status_file}
     return 1
   fi
   log_file "cache sdk success" ${status_file}
-
-  if ! make clean -j${num_proc} &>> ${log_file_path}; then
-    log_shell "clean host directory failure"
-    log_file "clean host directory failure" ${status_file}
-    return 1
-  fi
-
-  log_file "clean host directory" ${status_file}
 
   log_file "build sdk done" ${status_file}
   return 0
@@ -106,6 +104,7 @@ buildroot_build_image() {
   local target=$1
   local status_file=${log_dir}/buildroot_image.status
   local log_file_path=${log_dir}/buildroot_image.log
+  local target_build_dir=${build_dir}/${target}
 
   local defconfig=$(yq -r ".$target.image.defconfig" ${target_yaml})
   local num_proc=$(yq -r ".$target.nproc" ${target_yaml})
@@ -124,11 +123,14 @@ buildroot_build_image() {
   fi
   log_file "set image config success" ${status_file}
 
+  # Set target build directory
+  mkdir -p ${target_build_dir}
+  cd ${target_build_dir}
+
   # Build image
-  cd ${buildroot_dir}
   log_file "build running" ${status_file}
 
-  if ! make $(basename ${defconfig}) &>> ${log_file_path}; then
+  if ! make O=${target_build_dir} -C ${buildroot_dir} $(basename ${defconfig}) &>> ${log_file_path}; then
     log_shell "set defconfig failure"
     log_file "set defconfig failure" ${status_file}
     return 1
@@ -141,7 +143,7 @@ buildroot_build_image() {
   fi
 
   # Exract images
-  cp -r ${buildroot_dir}/output/images ${materials_dir}
+  cp -r ${target_build_dir}/images ${materials_dir}
   if [ $? -ne 0 ]; then
     log_file "export images failure" ${status_file}
     return 1
