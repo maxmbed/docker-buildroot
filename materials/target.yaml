@@ -7,4 +7,10 @@ qemu_x86_64:
     image:
         defconfig: "materials/configs/image/qemu_x86_64_defconfig"
 
+    run:
+      - export PATH="/buildroot-home/target-builds/qemu_x86_64/host/bin:${PATH}"
+      - cd /buildroot-home/target-builds/qemu_x86_64/images
+      - qemu-system-x86_64 -M pc -kernel bzImage -drive file=rootfs.ext2,if=virtio,format=raw -append "rootwait root=/dev/vda console=tty1 console=ttyS0" -net nic,model=virtio -net user -nographic -device vhost-vsock-pci,id=vhost-vsock-pci0,guest-cid=3
+
     nproc: 4
+

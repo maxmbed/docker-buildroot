@@ -154,34 +154,16 @@ buildroot_build_image() {
   return 0
 }
 
-start_system() {
-  log_shell "start system"
-  local sdk_name=x86_64-buildroot-linux-gnu_sdk-buildroot
-  local qemu_system=${sdk_dir}/${sdk_name}/bin/qemu-system-x86_64
+run_target() {
+  log_shell "running target"
+  local target=$1
+  mapfile -t run_list < <(yq -r ".$target.run[]" ${target_yaml})
 
-  #${qemu_system} \
-  #    -M pc \
-  #    -kernel ${image_dir}/bzImage \
-  #    -drive file=${image_dir}/rootfs.ext2,if=virtio,format=raw \
-  #    -append "root=/dev/vda console=ttyS0" \
-  #    -net user,hostfwd=tcp:127.0.0.1:3333-:22 \
-  #    -net nic,model=virtio \
-  #    -nographic
-
-  ${qemu_system} \
-      -machine q35 \
-      -m 1G \
-      -enable-kvm \
-      -smp 4 \
-      -cpu host,-kvm-pv-eoi,-kvm-pv-ipi,-kvm-asyncpf,-kvm-steal-time,-kvmclock \
-      -kernel ${image_dir}/bzImage \
-      -drive file=${image_dir}/rootfs.ext2,if=virtio,format=raw \
-      -append "root=/dev/vda console=ttyS0 memmap=82M$0x3a000000 vmalloc=80M" \
-      -netdev user,id=net -device e1000e,addr=2.0,netdev=net \
-      -device pcie-pci-bridge \
-      -nographic
-
-  log_shell "exit system"
+  for run_cmd in "${run_list[@]}"
+  do
+    eval $run_cmd
+  done
+  log_shell "ending run target"
 }
 
 shell() {
@@ -196,7 +178,7 @@ show_usage() {
   echo -e "\t -t: select target"
   echo -e "\t -b: select type of build"
   echo -e "\t -s: enter shell"
-  echo -e "\t -x: execute target"
+  echo -e "\t -x: run target"
   echo -e "\t -k: keep container active after build"
 }
 
@@ -204,7 +186,7 @@ target="qemu-x86_64"
 build_type="all"
 keep_session=0
 
-while getopts ":st:b:xk" opt; do
+while getopts ":st:b:x:k" opt; do
 case ${opt} in
   t)
     target=${OPTARG}
@@ -213,7 +195,7 @@ case ${opt} in
     build_type=${OPTARG}
     ;;
   x)
-    start_system
+    run_target ${OPTARG}
     exit 0
     ;;
   s)
