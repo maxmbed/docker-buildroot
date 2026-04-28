@@ -12,13 +12,13 @@ docker build -t docker-buildroot .
 
 Start docker-buildroot container using the run script. 
 
-Few input may be parsed to perform dedicated action inside the container for example entering the shell or for starting buildroot.
+Few input may be parsed to perform dedicated command inside container for example entering the shell or for starting buildroot.
 
-The container entry point is an agnostic script which read yaml parameters need for getting Buildroot ready to go. Input configuration such as defconfig, scripts, packages, archives should be placed inside the mount point `./materials` (auto create and mounted by run script).
+The container entry point is an agnostic script which read yaml instructions need for getting Buildroot ready. Input configuration such as defconfig, scripts, packages, archives should be placed inside the mount point `./materials` (auto created and bond by run script).
 
-Upon successfull build, resulting arftefacts images, rootfs, sdk and other materials output are copied within `./materials`.
+Upon successfull build, resulting arftefacts images, rootfs, sdk and other materials output are copied on host within `./materials`.
 
-Container uses volume to keep persistent ccache, host and downloads directories.
+Container uses volume to keep persistent ccache, output and downloads directories.
 
 # Usage
 
@@ -34,15 +34,15 @@ Launch container and login. This is handy to manually interact with buildroot (e
 
 ## Building target
 
-Run the build of a target.
+Build of a target.
 
-A target is a platform, board or project that is defined under `./materials/target.yaml`. It should have at least defconfig file but it may contain other optionnal parameters need for Buildroot as well.
+A target is a platform, board or project that is defined under `./materials/target.yaml`. It should have at least defconfig file but it may contain other optionnal parameters need for Buildroot.
 
 Multiple targets can be defined in single `target.yaml`. Each target can be used to define sdk, images and more.
 
 ## Persistent volume
 
-Container creates/uses volume to keep buildroot ccache, host and download directories persistent between run of containers
+Container creates/uses volume to keep buildroot ccache, output and download directories persistent between run of containers
 
 Volume tree:
 
