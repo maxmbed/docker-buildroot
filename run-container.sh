@@ -4,7 +4,7 @@ workdir=/buildroot-home
 
 mkdir -p materials
 
-sudo docker run \
+docker run \
   --rm \
   --privileged \
   -v /lib/modules:/lib/modules \
