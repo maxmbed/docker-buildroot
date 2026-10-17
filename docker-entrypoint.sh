@@ -43,6 +43,11 @@ trap log_export SIGINT
 
 # Build the sdk 
 buildroot_build_sdk() {
+  if [ -z $1 ]; then
+    log_shell "target not defined"
+    exit 1
+  fi
+
   local target=$1
   local status_file=${log_dir}/buildroot_sdk.status
   local log_file_path=${log_dir}/buildroot_sdk.log
@@ -101,6 +106,11 @@ buildroot_build_sdk() {
 }
 
 buildroot_build_image() {
+  if [ -z $1 ]; then
+    log_shell "target not defined"
+    exit 1
+  fi
+
   local target=$1
   local status_file=${log_dir}/buildroot_image.status
   local log_file_path=${log_dir}/buildroot_image.log
@@ -167,8 +177,16 @@ run_target() {
 }
 
 shell() {
-  echo "entering shell"
+  local target=$1
+
+  log_shell "entering shell"
   log_file  "entering shell" ${log_dir}/shell.log
+
+  if [[ -n $target && -d "${build_dir}/${target}" ]]; then
+    cd ${build_dir}/$target
+  else
+    cd ${workdir}
+  fi
   /bin/bash
   echo "exiting shell"
 }
@@ -182,9 +200,10 @@ show_usage() {
   echo -e "\t -k: keep container active after build"
 }
 
-target="qemu-x86_64"
+target=""
 build_type="all"
 keep_session=0
+enter_shell=0
 
 while getopts ":st:b:x:k" opt; do
 case ${opt} in
@@ -199,8 +218,7 @@ case ${opt} in
     exit 0
     ;;
   s)
-    shell
-    exit 0
+    enter_shell=1
     ;;
   k)
     keep_session=1
@@ -211,6 +229,11 @@ case ${opt} in
     ;;
 esac
 done
+
+if [ $enter_shell -eq 1 ]; then
+  shell $target
+  exit 0
+fi
 
 case ${build_type} in
   sdk)
@@ -231,11 +254,15 @@ case ${build_type} in
       exit 2
     fi
     ;;
+  ?)
+    echo "Unknown build type"
+    exit 1
+    ;;
 esac
 
 if [ $keep_session -eq 1 ]; then
   echo "Keeping this session alive"
-  shell
+  shell $target
 fi
 
 log_export
