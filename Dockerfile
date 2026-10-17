@@ -53,6 +53,9 @@ RUN apt-get install -y \
         yq \
         nnn
 
+# VNC port
+EXPOSE 5900
+
 WORKDIR /buildroot-home
 # Below volumes are created to keeps Buildroot ccache, download and host directory persistent
 VOLUME /buildroot-home/cache

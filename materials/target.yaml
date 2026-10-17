@@ -24,7 +24,7 @@ qemu_x86_64_xorg:
     run:
       - export PATH="/buildroot-home/target-builds/qemu_x86_64/host/bin:${PATH}"
       - cd /buildroot-home/target-builds/qemu_x86_64/images
-      - qemu-system-x86_64 -M pc -kernel bzImage -drive file=rootfs.ext2,if=virtio,format=raw -append "rootwait root=/dev/vda console=tty1 console=ttyS0" -net nic,model=virtio -net user -device vhost-vsock-pci,id=vhost-vsock-pci0,guest-cid=3
+      - qemu-system-x86_64 -M pc -m 1024 -kernel bzImage -drive file=rootfs.ext2,if=virtio,format=raw -append "rootwait root=/dev/vda console=ttyS0" -serial stdio -net nic,model=virtio -net user -display none -vnc 0.0.0.0:0 -device VGA -device usb-ehci -device usb-kbd -device usb-tablet
 
     nproc: 4
 
@@ -35,3 +35,8 @@ qemu_x86_64_wayland:
     image:
         defconfig: "materials/configs/image/qemu_x86_64_wayland_defconfig"
     nproc: 4
+
+    run:
+      - export PATH="/buildroot-home/target-builds/qemu_x86_64_wayland/host/bin:${PATH}"
+      - cd /buildroot-home/target-builds/qemu_x86_64_wayland/images
+      - qemu-system-x86_64 -M pc -m 1024 -kernel bzImage -drive file=rootfs.ext2,format=raw,if=ide -append "root=/dev/sda rw console=ttyS0" -serial stdio -net nic,model=virtio -net user -display none -vnc 0.0.0.0:0 -device VGA -device usb-ehci -device usb-kbd -device usb-tablet
