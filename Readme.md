@@ -1,30 +1,23 @@
 # Docker Buildroot
 
-A Docker container to make Linux-base images with Buildroot
-
-# Build docker image
-
-```shell
-docker build -t docker-buildroot .
-```
+Docker Buildroot is a container to make Linux-base images using Buildroot
 
 # Introduction 
 
-Launch docker-buildroot container using the run script. 
+Launch docker-buildroot container using the container run-script. 
 
-Inside the container, an entry point agnostic script fetches instruction for getting Buildroot configured and ready. All files configuration such as defconfig, scripts, overlay, packages, archives must be located somewhere in the mount point `./materials` so Buildroot can use them. (note: mount point auto created and bond by run container script).
+Within the container, an agnostic entry-point script is used for getting Buildroot configured and ready to make. All files configuration such as defconfig, scripts, overlay, packages, archives must be located somewhere in the mount point `./materials` directory so Buildroot can use them inside the container. (note: mount point auto created and bond by run container script).
 
-The script uses command line input to perform dedicated command inside the container. For example login container shell or to make buildroot.
+The container run-script uses command line option to perform commands inside the container such as login container shell or to make buildroot.
 
-Upon successfull build, resulting arftefacts images, rootfs, sdk and other materials output are copied outside of the container on the host file system (`./materials`).
+Upon successfull build, resulting arftefacts images, rootfs, sdk and other materials output are copied outside of the container on the host file system in `./materials` directory.
 
 # Persistent build
 
-Container uses volumes to keep persistent Buildroot build dir, ccache, dl directories and also the sdk archives.
+Docker Buildroot provides volumes for keeping persistent build-dir, ccache, dl directories and sdk archives safe bewteen container sessions.
 
-Volume tree:
-
-```
+```sh
+# Volume tree
 cache/
 |-- ccache-image
 |-- ccache-sdk
@@ -32,19 +25,25 @@ cache/
 `-- sdk
 ```
 
+# Build docker image
+
+```shell
+docker build -t docker-buildroot .
+```
+
 # Usage
 
-Below describes run container commands
+Below is describing container run script commands
 
-## Enter shell container
+## Enter container
 
-Launch container and login. This is handy to manually interact with buildroot (e.g. enter menuconfig, test build & configuration, edit files ...).
+Launch container and login into shell. This is handy for manually interacting with buildroot (e.g. get menuconfig, test build, configure, edit files, ...).
 
 ```sh
 ./run-cotnainer.sh -s
 ```
 
-Launch container and login into target build (output) directory
+To straight login into target build-dir directory
 
 ```sh
 ./run-container.sh -s -t qemu_x86_64_weston
@@ -52,39 +51,36 @@ Launch container and login into target build (output) directory
 
 ## Building a target
 
-A target is a platform, a board or a project defined in `./materials/target.yaml` file. It should have at least necessary defconfig file and optionnal parameters for Buildroot.
+A target is a platform, a board or a project defined in file `./materials/target.yaml`. It should have at least the defconfig but can alos have optionnal parameters for Buildroot.
 
-Multiple targets can be defined within a single `target.yaml`.
+Multiple targets can be defined within `target.yaml`.
 
-### Build of sdk
-
-Build a target sdk
+### Build sdk target
 
 ```sh
 ./run-container.sh -t <target-name> -b sdk
 ```
 
-> Tip: use option `-k` to keep container active after build and login shell 
-
-### Build of rootfs image 
-
-Build a target image
+### Build image target 
 
 ```sh
 ./run-container.sh -t <target-name> -b image
 
 ```
 
-# Loging
+> Tip: use option `-k` to keep container shell active after build  
 
-Build logs are provided in `./logs` but only copied afeter build success or error.
+# Logs
 
-Use below command to show in real time the build log
+Build logs are provided in directory `./logs` but they can only be copied after build success or error.
+
+So to watch the build log in real timen, execute docker in interactive mode to get log 
 
 ```sh
-# Show build log
+# Watch build log
 docker exec -it docker-buildroot tail -f logs/buildroot_image.log
 
-# Show build run-container script status
+# Watch run-container script status
 docker exec -it docker-buildroot tail -f logs/buildroot_image.status
 ```
+
