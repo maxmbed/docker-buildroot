@@ -10,39 +10,17 @@ docker build -t docker-buildroot .
 
 # Introduction 
 
-Start docker-buildroot container using the run script. 
+Launch docker-buildroot container using the run script. 
 
-Few input may be parsed to perform dedicated command inside container for example entering the shell or for starting buildroot.
+Inside the container, an entry point agnostic script fetches instruction for getting Buildroot configured and ready. All files configuration such as defconfig, scripts, overlay, packages, archives must be located somewhere in the mount point `./materials` so Buildroot can use them. (note: mount point auto created and bond by run container script).
 
-The container entry point is an agnostic script which read yaml instructions need for getting Buildroot ready. Input configuration such as defconfig, scripts, packages, archives should be placed inside the mount point `./materials` (auto created and bond by run script).
+The script uses command line input to perform dedicated command inside the container. For example login container shell or to make buildroot.
 
-Upon successfull build, resulting arftefacts images, rootfs, sdk and other materials output are copied on host within `./materials`.
+Upon successfull build, resulting arftefacts images, rootfs, sdk and other materials output are copied outside of the container on the host file system (`./materials`).
 
-Container uses volume to keep persistent ccache, output and downloads directories.
+# Persistent build
 
-# Usage
-
-Below describes few container entry point commands.
-
-## Enter shell container
-
-Launch container and login. This is handy to manually interact with buildroot (e.g. enter menuconfig, try build, edit files ...).
-
-```sh
-./run-cotnainer.sh -s
-```
-
-## Building target
-
-Build of a target.
-
-A target is a platform, board or project that is defined under `./materials/target.yaml`. It should have at least defconfig file but it may contain other optionnal parameters need for Buildroot.
-
-Multiple targets can be defined in single `target.yaml`. Each target can be used to define sdk, images and more.
-
-## Persistent volume
-
-Container creates/uses volume to keep buildroot ccache, output and download directories persistent between run of containers
+Container uses volumes to keep persistent Buildroot build dir, ccache, dl directories and also the sdk archives.
 
 Volume tree:
 
@@ -51,12 +29,34 @@ cache/
 |-- ccache-image
 |-- ccache-sdk
 |-- dl
-`-- sdk*
+`-- sdk
 ```
 
-> *a copy of sdk is kept in volume to build image 
+# Usage
 
-### Sdk
+Below describes run container commands
+
+## Enter shell container
+
+Launch container and login. This is handy to manually interact with buildroot (e.g. enter menuconfig, test build & configuration, edit files ...).
+
+```sh
+./run-cotnainer.sh -s
+```
+
+Launch container and login into target build (output) directory
+
+```sh
+./run-container.sh -s -t qemu_x86_64_weston
+```
+
+## Building a target
+
+A target is a platform, a board or a project defined in `./materials/target.yaml` file. It should have at least necessary defconfig file and optionnal parameters for Buildroot.
+
+Multiple targets can be defined within a single `target.yaml`.
+
+### Build of sdk
 
 Build a target sdk
 
@@ -64,11 +64,27 @@ Build a target sdk
 ./run-container.sh -t <target-name> -b sdk
 ```
 
-### Image
+> Tip: use option `-k` to keep container active after build and login shell 
+
+### Build of rootfs image 
 
 Build a target image
 
 ```sh
 ./run-container.sh -t <target-name> -b image
 
+```
+
+# Loging
+
+Build logs are provided in `./logs` but only copied afeter build success or error.
+
+Use below command to show in real time the build log
+
+```sh
+# Show build log
+docker exec -it docker-buildroot tail -f logs/buildroot_image.log
+
+# Show build run-container script status
+docker exec -it docker-buildroot tail -f logs/buildroot_image.status
 ```

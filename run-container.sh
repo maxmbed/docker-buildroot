@@ -11,6 +11,7 @@ docker run \
   --mount type=volume,source=buildroot-build-cache,destination=${workdir}/cache \
   --mount type=volume,source=buildroot-host,destination=${workdir}/target-builds \
   --mount type=bind,source="$(pwd)/materials",destination=${workdir}/materials \
+  --device /dev/kvm \
   -p 127.0.0.1:5900:5900 \
   -it \
   -e "TERM=xterm-256color" \
