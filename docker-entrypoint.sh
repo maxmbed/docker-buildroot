@@ -55,23 +55,44 @@ buildroot_build() {
   local log_file_path=${log_dir}/buildroot_$build_type.log
   local target_build_dir=${build_dir}/${target}
 
-  local defconfig=$(yq -r ".$target.$build_type.defconfig" ${target_yaml})
-  local num_proc=$(yq -r ".$target.nproc" ${target_yaml})
-  cd ${workdir}
-
   # Clean logs
   rm -fv ${log_file_path}
   rm -fv ${status_file}
+  cd ${workdir}
+
+  # Test target is in yaml or inside buildroot
+  if [ $(yq -r ".$target" ${target_yaml}) = null ]; then
+    if [ -f $buildroot_dir/configs/$target ]; then
+      # Target comes from Buildroot
+      defconfig=$buildroot_dir/configs/$target
+      target_build_dir=$(echo ${target_build_dir%_defconfig})
+    else
+      log_file "Target $target could not be neither found in ${target_yaml} nor in ${buildroot_dir}/configs"
+      return 1
+    fi
+  else
+    # Target is defined in yaml
+    local defconfig=$(yq -r ".$target.image.defconfig" ${target_yaml})
+    if [ $defconfig = null ]; then
+      log_file "Target $target defconfig could not be found in ${target_yaml}"
+      return 1
+    fi
+      # Set config
+      cp ${workdir}/${defconfig} ${buildroot_dir}/configs
+      if [ $? -ne 0 ]; then
+        log_file "set $build_type config failure" ${status_file}
+        return 1
+      fi
+      log_file "set $build_type config success" ${status_file}
+  fi
+
+  local num_proc=$(yq -r ".$target.nproc" ${target_yaml})
+  if [ $num_proc = null ]; then
+    # default 1 cpu
+    num_proc=1
+  fi
 
   log_file "build $build_type start" ${status_file}
-
-  # Set config
-  cp ${workdir}/${defconfig} ${buildroot_dir}/configs
-  if [ $? -ne 0 ]; then
-    log_file "set $build_type config failure" ${status_file}
-    return 1
-  fi
-  log_file "set $build_type config success" ${status_file}
 
   # Set target build directory
   mkdir -p ${target_build_dir}
@@ -101,6 +122,7 @@ buildroot_build() {
   if [ "$build_type" = sdk ]; then
     # Cache sdk archive
     local sdk_archive=$(yq -r ".$target.sdk.toolchain_archive" ${target_yaml})
+
     mkdir -p ${sdk_dir}
     cp ${target_build_dir}/images/${sdk_archive} ${sdk_dir}
     if [ $? -ne 0 ]; then
