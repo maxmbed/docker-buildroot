@@ -36,6 +36,7 @@ log_shell() {
 }
 
 log_export() {
+  local target=$1
   cp -r ${log_dir} ${materials_dir}
   sleep 1
 }
@@ -45,6 +46,11 @@ trap log_export SIGINT
 # Build buildroot image or sdk
 buildroot_build() {
   if [ -z $1 ]; then
+    log_shell "build type not defined"
+    exit 1
+  fi
+
+  if [ -z $2 ]; then
     log_shell "target not defined"
     exit 1
   fi
@@ -67,23 +73,23 @@ buildroot_build() {
       defconfig=$buildroot_dir/configs/$target
       target_build_dir=$(echo ${target_build_dir%_defconfig})
     else
-      log_file "Target $target could not be neither found in ${target_yaml} nor in ${buildroot_dir}/configs"
+      log_file "Target $target could not be neither found in ${target_yaml} nor in ${buildroot_dir}/configs" ${status_file}
       return 1
     fi
   else
     # Target is defined in yaml
     local defconfig=$(yq -r ".$target.image.defconfig" ${target_yaml})
     if [ $defconfig = null ]; then
-      log_file "Target $target defconfig could not be found in ${target_yaml}"
+      log_file "Target $target defconfig could not be found in ${target_yaml}" ${status_file}
       return 1
     fi
       # Set config
       cp ${workdir}/${defconfig} ${buildroot_dir}/configs
       if [ $? -ne 0 ]; then
-        log_file "set $build_type config failure" ${status_file}
+        log_file "set $build_type config failure" ${status_file} ${status_file}
         return 1
       fi
-      log_file "set $build_type config success" ${status_file}
+      log_file "set $build_type config success" ${status_file} ${status_file}
   fi
 
   local num_proc=$(yq -r ".$target.nproc" ${target_yaml})
