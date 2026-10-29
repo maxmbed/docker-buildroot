@@ -1,3 +1,4 @@
+#!/bin/bash
 
 set -x
 
@@ -41,20 +42,20 @@ log_export() {
 
 trap log_export SIGINT
 
-# Build the sdk 
-buildroot_build_sdk() {
+# Build buildroot image or sdk
+buildroot_build() {
   if [ -z $1 ]; then
     log_shell "target not defined"
     exit 1
   fi
 
-  local target=$1
+  local build_type=$1
+  local target=$2
   local status_file=${log_dir}/buildroot_sdk.status
-  local log_file_path=${log_dir}/buildroot_sdk.log
+  local log_file_path=${log_dir}/buildroot_$build_type.log
   local target_build_dir=${build_dir}/${target}
 
-  local defconfig=$(yq -r ".$target.sdk.defconfig" ${target_yaml})
-  local sdk_archive=$(yq -r ".$target.sdk.toolchain_archive" ${target_yaml})
+  local defconfig=$(yq -r ".$target.$build_type.defconfig" ${target_yaml})
   local num_proc=$(yq -r ".$target.nproc" ${target_yaml})
   cd ${workdir}
 
@@ -62,21 +63,21 @@ buildroot_build_sdk() {
   rm -fv ${log_file_path}
   rm -fv ${status_file}
 
-  log_file "build sdk start" ${status_file}
+  log_file "build $build_type start" ${status_file}
 
-  # Set sdk config
+  # Set config
   cp ${workdir}/${defconfig} ${buildroot_dir}/configs
   if [ $? -ne 0 ]; then
-    log_file "set sdk config failure" ${status_file}
+    log_file "set $build_type config failure" ${status_file}
     return 1
   fi
-  log_file "set sdk config success" ${status_file}
+  log_file "set $build_type config success" ${status_file}
 
   # Set target build directory
   mkdir -p ${target_build_dir}
   cd ${target_build_dir}
 
-  # Build sdk
+  # Build
   log_file "build running" ${status_file}
 
   if ! make O=${target_build_dir} -C ${buildroot_dir} $(basename ${defconfig}) &>> ${log_file_path}; then
@@ -85,82 +86,40 @@ buildroot_build_sdk() {
     return 1
   fi
 
-  if ! make sdk -j${num_proc} &>> ${log_file_path}; then
-    log_shell "build sdk failure"
-    log_file "build failure" ${status_file}
+  local make_cmd=(make)
+  if [ "$build_type" = sdk ]; then
+    make_cmd+=(sdk)
+  fi
+
+  if ! "${make_cmd[@]}" -j${num_proc} &>> ${log_file_path}; then
+    log_shell "build $build_type failure"
+    log_file "build $build_type failure" ${status_file}
     return 1
   fi
-  log_file "build success" ${status_file}
+  log_file "build $build_type success" ${status_file}
 
-  # Cache sdk archive
-  mkdir -p ${sdk_dir}
-  cp ${target_build_dir}/images/${sdk_archive} ${sdk_dir}
-  if [ $? -ne 0 ]; then
-    log_file "cache sdk failure" ${status_file}
-    return 1
-  fi
-  log_file "cache sdk success" ${status_file}
+  if [ "$build_type" = sdk ]; then
+    # Cache sdk archive
+    local sdk_archive=$(yq -r ".$target.sdk.toolchain_archive" ${target_yaml})
+    mkdir -p ${sdk_dir}
+    cp ${target_build_dir}/images/${sdk_archive} ${sdk_dir}
+    if [ $? -ne 0 ]; then
+      log_file "cache sdk failure" ${status_file}
+      return 1
+    fi
+    log_file "cache sdk success" ${status_file}
 
-  log_file "build sdk done" ${status_file}
-  return 0
-}
-
-buildroot_build_image() {
-  if [ -z $1 ]; then
-    log_shell "target not defined"
-    exit 1
-  fi
-
-  local target=$1
-  local status_file=${log_dir}/buildroot_image.status
-  local log_file_path=${log_dir}/buildroot_image.log
-  local target_build_dir=${build_dir}/${target}
-
-  local defconfig=$(yq -r ".$target.image.defconfig" ${target_yaml})
-  local num_proc=$(yq -r ".$target.nproc" ${target_yaml})
-
-  # Clean logs
-  rm -fv ${log_file_path}
-  rm -fv ${status_file}
-
-  log_file "build image start" ${status_file}
-
-  # Set image config
-  cp ${workdir}/${defconfig} ${buildroot_dir}/configs
-  if [ $? -ne 0 ]; then
-    log_file "set image config failure" ${status_file}
-    return 1
-  fi
-  log_file "set image config success" ${status_file}
-
-  # Set target build directory
-  mkdir -p ${target_build_dir}
-  cd ${target_build_dir}
-
-  # Build image
-  log_file "build running" ${status_file}
-
-  if ! make O=${target_build_dir} -C ${buildroot_dir} $(basename ${defconfig}) &>> ${log_file_path}; then
-    log_shell "set defconfig failure"
-    log_file "set defconfig failure" ${status_file}
-    return 1
+  elif [ "$build_type" = image ]; then
+    # Exract images
+    cp -r ${target_build_dir}/images ${materials_dir}
+    if [ $? -ne 0 ]; then
+      log_file "export images failure" ${status_file}
+      return 1
+    fi
+    log_file "export images success" ${status_file}
   fi
 
-  if ! make -j${num_proc} &>> ${log_file_path}; then
-    log_shell "build image failure"
-    log_file "build failure" ${status_file}
-    return 1
-  fi
-
-  # Exract images
-  cp -r ${target_build_dir}/images ${materials_dir}
-  if [ $? -ne 0 ]; then
-    log_file "export images failure" ${status_file}
-    return 1
-  fi
-  log_file "export images success" ${status_file}
-
-  log_file "build image done" ${status_file}
+  log_file "build $build_type done" ${status_file}
   return 0
 }
 
@@ -236,19 +195,16 @@ if [ $enter_shell -eq 1 ]; then
 fi
 
 case ${build_type} in
-  sdk)
-    buildroot_build_sdk $target
-    ;;
-  image)
-    buildroot_build_image $target
+  sdk | image)
+    buildroot_build $build_type $target
     ;;
   all)
-    buildroot_build_sdk $target
+    buildroot_build sdk $target
     if [ $? -ne 0 ]; then
       log_export
       exit 1
     fi
-    buildroot_build_image $target
+    buildroot_build image $target
     if [ $? -ne 0 ]; then
       log_export
       exit 2
