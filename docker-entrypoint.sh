@@ -1,6 +1,8 @@
 #!/bin/bash
 
-set -x
+if [ -f materials/debug_enable ]; then
+  set -x
+fi
 
 # Root directory
 rootdir=/
