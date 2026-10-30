@@ -43,7 +43,13 @@ log_export() {
   sleep 1
 }
 
-trap log_export SIGINT
+interupt_sigint() {
+  log_file "program interupted by signal SIGINT" ${status_file}
+  log_shell "program interupted by signal SIGINT"
+  log_export
+}
+
+trap interupt_sigint SIGINT
 
 # Build buildroot image or sdk
 buildroot_build() {
@@ -75,7 +81,7 @@ buildroot_build() {
     # Target is defined in yaml
     local defconfig=$(yq -r ".$target.image.defconfig" ${target_yaml})
     if [ $defconfig = null ]; then
-      log_file "Target $target defconfig could not be found in ${target_yaml}" ${status_file}
+      log_file "target $target defconfig could not be found in ${target_yaml}" ${status_file}
       return 1
     fi
       # Set config
@@ -91,7 +97,7 @@ buildroot_build() {
       defconfig=$buildroot_dir/configs/$target
       target_build_dir=$(echo ${target_build_dir%_defconfig})
     else
-      log_file "Target $target could not be neither found in ${target_yaml} nor in ${buildroot_dir}/configs" ${status_file}
+      log_file "target $target could not be neither found in ${target_yaml} nor in ${buildroot_dir}/configs" ${status_file}
       return 1
     fi
   fi
