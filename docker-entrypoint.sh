@@ -65,7 +65,7 @@ buildroot_build() {
 
   local build_type=$1
   local target=$2
-  local target_log_dir=${log_dir}/${target}
+  local target_log_dir=${log_dir}/${target%_defconfig}
   local status_file=${target_log_dir}/buildroot_${build_type}.status
   local log_file_path=${target_log_dir}/buildroot_${build_type}.log
   local target_build_dir=${build_dir}/${target}
@@ -87,10 +87,10 @@ buildroot_build() {
       # Set config
       cp ${workdir}/${defconfig} ${buildroot_dir}/configs
       if [ $? -ne 0 ]; then
-        log_file "set $build_type config failure" ${status_file} ${status_file}
+        log_file "set $build_type config failure" ${status_file}
         return 1
       fi
-      log_file "set $build_type config success" ${status_file} ${status_file}
+      log_file "set $build_type config success" ${status_file}
   else
     if [ -f $buildroot_dir/configs/$target ]; then
       # Target comes from Buildroot
