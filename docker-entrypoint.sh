@@ -69,16 +69,7 @@ buildroot_build() {
   cd ${workdir}
 
   # Test target is in yaml or inside buildroot
-  if [ $(yq -r ".$target" ${target_yaml}) = null ]; then
-    if [ -f $buildroot_dir/configs/$target ]; then
-      # Target comes from Buildroot
-      defconfig=$buildroot_dir/configs/$target
-      target_build_dir=$(echo ${target_build_dir%_defconfig})
-    else
-      log_file "Target $target could not be neither found in ${target_yaml} nor in ${buildroot_dir}/configs" ${status_file}
-      return 1
-    fi
-  else
+  if yq -e ".$target" "${target_yaml}" > /dev/null 2>&1; then
     # Target is defined in yaml
     local defconfig=$(yq -r ".$target.image.defconfig" ${target_yaml})
     if [ $defconfig = null ]; then
@@ -92,6 +83,15 @@ buildroot_build() {
         return 1
       fi
       log_file "set $build_type config success" ${status_file} ${status_file}
+  else
+    if [ -f $buildroot_dir/configs/$target ]; then
+      # Target comes from Buildroot
+      defconfig=$buildroot_dir/configs/$target
+      target_build_dir=$(echo ${target_build_dir%_defconfig})
+    else
+      log_file "Target $target could not be neither found in ${target_yaml} nor in ${buildroot_dir}/configs" ${status_file}
+      return 1
+    fi
   fi
 
   local num_proc=$(yq -r ".$target.nproc" ${target_yaml})
