@@ -109,7 +109,8 @@ buildroot_build() {
   # Build
   log_file "build running" ${status_file}
 
-  if ! make O=${target_build_dir} -C ${buildroot_dir} $(basename ${defconfig}) &>> ${log_file_path}; then
+  make O=${target_build_dir} -C ${buildroot_dir} $(basename ${defconfig}) 2>&1 | tee --append ${log_file_path}
+  if [ ${PIPESTATUS[0]} -ne 0 ]; then
     log_shell "set defconfig failure"
     log_file "set defconfig failure" ${status_file}
     return 1
@@ -120,7 +121,8 @@ buildroot_build() {
     make_cmd+=(sdk)
   fi
 
-  if ! "${make_cmd[@]}" -j${num_proc} &>> ${log_file_path}; then
+  "${make_cmd[@]}" -j${num_proc} 2>&1 | tee --append ${log_file_path}
+  if [ ${PIPESTATUS[0]} -ne 0 ]; then
     log_shell "build $build_type failure"
     log_file "build $build_type failure" ${status_file}
     return 1
