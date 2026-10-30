@@ -36,8 +36,8 @@ log_shell() {
 }
 
 log_export() {
-  local target=$1
-  cp -r ${log_dir} ${materials_dir}
+  mkdir -p ${materials_dir}/logs
+  cp -r ${log_dir}/ ${materials_dir}/
   sleep 1
 }
 
@@ -57,11 +57,13 @@ buildroot_build() {
 
   local build_type=$1
   local target=$2
-  local status_file=${log_dir}/buildroot_sdk.status
-  local log_file_path=${log_dir}/buildroot_$build_type.log
+  local target_log_dir=${log_dir}/${target}
+  local status_file=${target_log_dir}/buildroot_${build_type}.status
+  local log_file_path=${target_log_dir}/buildroot_${build_type}.log
   local target_build_dir=${build_dir}/${target}
 
   # Clean logs
+  mkdir -p ${target_log_dir}
   rm -fv ${log_file_path}
   rm -fv ${status_file}
   cd ${workdir}
