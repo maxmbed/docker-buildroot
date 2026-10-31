@@ -163,6 +163,42 @@ buildroot_build() {
   return 0
 }
 
+buildroot_cmd() {
+  local build_cmd=$1
+  local target=$2
+  local target_log_dir=${log_dir}/${target%_defconfig}
+  local status_file=${target_log_dir}/buildroot_${build_type}.status
+  local log_file_path=${target_log_dir}/buildroot_${build_type}.log
+  local target_build_dir=${build_dir}/${target}
+
+  # Clean logs
+  mkdir -p ${target_log_dir}
+  rm -fv ${log_file_path}
+  rm -fv ${status_file}
+  cd ${workdir}
+
+  case "$build_cmd" in
+    menuconfig | linux-menuconfig)
+      # Interactive command (ncurses): stdin/stdout must stay TTY
+      # No pipe, no redirection and so no poissble log
+      make O=${target_build_dir} -C ${buildroot_dir} $build_cmd
+      rc=$?
+      ;;
+    *)
+      make O=${target_build_dir} -C ${buildroot_dir} $build_cmd 2>&1 | tee --append ${log_file_path}
+      rc=${PIPESTATUS[0]}
+      ;;
+  esac
+
+  if [ $rc -ne 0 ]; then
+    log_shell "build command $build_cmd failed"
+    log_file "build command $build_cmd failed" ${status_file}
+    return 1
+  fi
+
+  return 0
+}
+
 run_target() {
   log_shell "running target"
   local target=$1
@@ -237,6 +273,9 @@ fi
 case ${build_type} in
   sdk | image)
     buildroot_build $build_type $target
+    ;;
+  *)
+    buildroot_cmd $build_type $target
     ;;
   all)
     buildroot_build sdk $target
