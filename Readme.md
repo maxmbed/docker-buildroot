@@ -162,3 +162,9 @@ docker exec -it docker-buildroot tail -f logs/<target-name>/buildroot_image.log
 # Watch run-container script status
 docker exec -it docker-buildroot tail -f logs/<target_name>/buildroot_image.status
 ```
+
+## Enable debug trace print
+
+```sh
+touch ./materials/debug_enable
+```
