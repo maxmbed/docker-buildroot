@@ -79,7 +79,7 @@ buildroot_build() {
   # Test target is in yaml or inside buildroot
   if yq -e ".$target" "${target_yaml}" > /dev/null 2>&1; then
     # Target is defined in yaml
-    local defconfig=$(yq -r ".$target.image.defconfig" ${target_yaml})
+    local defconfig=$(yq -r ".$target.$build_type.defconfig" ${target_yaml})
     if [ $defconfig = null ]; then
       log_file "target $target defconfig could not be found in ${target_yaml}" ${status_file}
       return 1
