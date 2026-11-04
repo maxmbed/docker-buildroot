@@ -8,7 +8,7 @@ fi
 rootdir=/
 
 # Work directory
-workdir=${rootdir}buildroot-home
+workdir=${rootdir}home/build
 
 # Container volumes
 buildroot_dir=${workdir}/buildroot

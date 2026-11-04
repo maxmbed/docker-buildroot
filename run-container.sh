@@ -1,10 +1,11 @@
 #!/bin/bash
 
-workdir=/buildroot-home
+workdir=/home/build
 
 mkdir -p materials
 
 docker run \
+  --hostname docker-buildroot \
   --rm \
   --privileged \
   -v /lib/modules:/lib/modules \

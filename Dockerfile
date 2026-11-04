@@ -56,15 +56,29 @@ RUN apt-get install -y \
 # VNC port
 EXPOSE 5900
 
-WORKDIR /buildroot-home
-# Below volumes are created to keeps Buildroot ccache, download and host directory persistent
-VOLUME /buildroot-home/cache
-VOLUME /buildroot-home/target-builds
+# Default to UID/GID 1000 if not provided
+ARG UID=1000
+ARG GID=1000
 
-RUN mkdir logs
+# Create group and user with host UID/GID
+RUN addgroup --gid $GID build && \
+    adduser --uid $UID --gid $GID --disabled-password --gecos "" build
+
+USER build
+WORKDIR /home/build
+
+RUN mkdir -p \
+  cache \
+  target-builds \
+  logs
+
+# Below volumes are created to keeps Buildroot ccache, download and host directory persistent
+VOLUME /home/build/cache
+VOLUME /home/build/target-builds
+
 # Get Buildroot, jaihouse hypervisor and linux kernel for jailhouse
 RUN git clone --depth 1 -b 2025.02 https://gitlab.com/buildroot.org/buildroot.git
-COPY ./docker-entrypoint.sh ./
+COPY --chown=build:build ./docker-entrypoint.sh ./
 ENTRYPOINT [ "/bin/bash", "./docker-entrypoint.sh" ]
 CMD ["-s"]
 

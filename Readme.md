@@ -72,7 +72,7 @@ target-builds/
 ## Build docker image
 
 ```shell
-docker build -t docker-buildroot .
+./build-container.sh
 ```
 
 ## Run-script usage
@@ -113,8 +113,8 @@ qemu_x86_64_weston:
     nproc: 4
 
     run:
-      - export PATH="/buildroot-home/target-builds/qemu_x86_64_weston/host/bin:${PATH}"
-      - cd /buildroot-home/target-builds/qemu_x86_64_weston/images
+      - export PATH="~/target-builds/qemu_x86_64_weston/host/bin:${PATH}"
+      - cd ~/target-builds/qemu_x86_64_weston/images
       - qemu-system-x86_64 -M pc -enable-kvm -m 1024 -kernel bzImage -drive file=rootfs.ext2,format=raw,if=ide -append "root=/dev/sda rw console=ttyS0" -serial mon:stdio -net nic,model=virtio -net user -display none -vnc 0.0.0.0:0 -device VGA -device usb-ehci -device usb-kbd -device usb-tablet
 ```
 
